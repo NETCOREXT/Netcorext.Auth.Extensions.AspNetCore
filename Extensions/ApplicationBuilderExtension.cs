@@ -22,15 +22,15 @@ public static class ApplicationBuilderExtension
 {
     private static readonly Regex RegexRoutePattern = new(@"\{([^:]+):apiVersion\}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static IApplicationBuilder RegisterPermissionEndpoints(this IApplicationBuilder builder, Action<IServiceProvider, RegisterConfig>? configure, Func<IServiceProvider, PermissionEndpoint, bool>? handler = null, params PermissionEndpoint[]? otherPermissionEndpoints)
+    public static IApplicationBuilder RegisterPermissionEndpoints(this IApplicationBuilder builder, Action<IServiceProvider, RegisterConfig>? configure, Action<IServiceProvider, RegisterConfig, IEnumerable<PermissionEndpoint>> register)
     {
+        if (register == null) throw new ArgumentNullException(nameof(register));
+        
         var app = (WebApplication)builder;
 
         var config = new RegisterConfig();
 
         using var scope = app.Services.CreateScope();
-
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<RouteService.RouteServiceClient>>();
 
         configure?.Invoke(scope.ServiceProvider, config);
 
@@ -75,66 +75,78 @@ public static class ApplicationBuilderExtension
                                                                                        AllowAnonymous = allowAnonymousAttr != null || permissionAttr == null,
                                                                                        Tag = permissionAttr?.Tag
                                                                                    };
-                                                                        })
-                                                                .Where(t => handler?.Invoke(scope.ServiceProvider, t) ?? true)
-                                                                .Union(otherPermissionEndpoints ?? Array.Empty<PermissionEndpoint>())
-                                                                .ToArray();
+                                                                        });
 
-        using var channel = GrpcChannel.ForAddress(config.RouteServiceUrl);
-
-        var client = new RouteService.RouteServiceClient(channel);
-
-        var request = new RegisterRouteRequest
-                      {
-                          Groups =
-                          {
-                              permissionEndpoints.GroupBy(t => $"{t.Group} - {t.Protocol}")
-                                                 .Select(t => new RegisterRouteRequest.Types.RouteGroup
-                                                              {
-                                                                  Name = t.Key,
-                                                                  BaseUrl = HttpProtocols.Http2.ToString().Equals(t.Key, StringComparison.OrdinalIgnoreCase)
-                                                                                ? config.Http2BaseUrl
-                                                                                : config.HttpBaseUrl,
-                                                                  ForwarderRequestVersion = config.ForwarderRequestVersion,
-                                                                  ForwarderHttpVersionPolicy = config.ForwarderHttpVersionPolicy.HasValue ? (int)config.ForwarderHttpVersionPolicy.Value : null,
-                                                                  ForwarderActivityTimeout = config.ForwarderActivityTimeout.HasValue ? Duration.FromTimeSpan(config.ForwarderActivityTimeout.Value) : null,
-                                                                  ForwarderAllowResponseBuffering = config.ForwarderAllowResponseBuffering,
-                                                                  Routes =
-                                                                  {
-                                                                      t.Select(t2 => new RegisterRouteRequest.Types.Route
-                                                                                     {
-                                                                                         Protocol = t2.Protocol,
-                                                                                         HttpMethod = t2.HttpMethod,
-                                                                                         RelativePath = t2.RelativePath,
-                                                                                         Template = t2.Template,
-                                                                                         FunctionId = t2.FunctionId,
-                                                                                         NativePermission = t2.NativePermission.FromPermissionType<Netcorext.Auth.Protobufs.Enums.PermissionType>(),
-                                                                                         AllowAnonymous = t2.AllowAnonymous,
-                                                                                         Tag = t2.Tag,
-                                                                                         RouteValues =
-                                                                                         {
-                                                                                             t2.RouteValues.Select(t3 => new RegisterRouteRequest.Types.RouteValue
-                                                                                                                         {
-                                                                                                                             Key = t3.Key,
-                                                                                                                             Value = t3.Value
-                                                                                                                         })
-                                                                                         }
-                                                                                     })
-                                                                  }
-                                                              })
-                          }
-                      };
-
-        try
-        {
-            client.RegisterRoute(request);
-        }
-        catch (Exception e)
-        {
-            logger.LogError(e, "{E}", e);
-        }
+        register.Invoke(scope.ServiceProvider, config, permissionEndpoints);
 
         return builder;
+    }
+
+    public static IApplicationBuilder RegisterPermissionEndpoints(this IApplicationBuilder builder, Action<IServiceProvider, RegisterConfig>? configure, Func<IServiceProvider, PermissionEndpoint, bool>? handler = null, params PermissionEndpoint[]? otherPermissionEndpoints)
+    {
+        return RegisterPermissionEndpoints(builder, configure,
+                                           (provider, config, permissionEndpoints) =>
+                                           {
+                                               var endpoints = permissionEndpoints.Where(t => handler?.Invoke(provider, t) ?? true)
+                                                                                  .Union(otherPermissionEndpoints ?? Enumerable.Empty<PermissionEndpoint>())
+                                                                                  .ToArray();
+
+                                               var logger = provider.GetRequiredService<ILogger<IApplicationBuilder>>();
+
+                                               using var channel = GrpcChannel.ForAddress(config.RouteServiceUrl);
+
+                                               var client = new RouteService.RouteServiceClient(channel);
+
+                                               var request = new RegisterRouteRequest
+                                                             {
+                                                                 Groups =
+                                                                 {
+                                                                     endpoints.GroupBy(t => $"{t.Group} - {t.Protocol}")
+                                                                              .Select(t => new RegisterRouteRequest.Types.RouteGroup
+                                                                                           {
+                                                                                               Name = t.Key,
+                                                                                               BaseUrl = HttpProtocols.Http2.ToString().Equals(t.Key, StringComparison.OrdinalIgnoreCase)
+                                                                                                             ? config.Http2BaseUrl
+                                                                                                             : config.HttpBaseUrl,
+                                                                                               ForwarderRequestVersion = config.ForwarderRequestVersion,
+                                                                                               ForwarderHttpVersionPolicy = config.ForwarderHttpVersionPolicy.HasValue ? (int)config.ForwarderHttpVersionPolicy.Value : null,
+                                                                                               ForwarderActivityTimeout = config.ForwarderActivityTimeout.HasValue ? Duration.FromTimeSpan(config.ForwarderActivityTimeout.Value) : null,
+                                                                                               ForwarderAllowResponseBuffering = config.ForwarderAllowResponseBuffering,
+                                                                                               Routes =
+                                                                                               {
+                                                                                                   t.Select(t2 => new RegisterRouteRequest.Types.Route
+                                                                                                                  {
+                                                                                                                      Protocol = t2.Protocol,
+                                                                                                                      HttpMethod = t2.HttpMethod,
+                                                                                                                      RelativePath = t2.RelativePath,
+                                                                                                                      Template = t2.Template,
+                                                                                                                      FunctionId = t2.FunctionId,
+                                                                                                                      NativePermission = t2.NativePermission.FromPermissionType<Netcorext.Auth.Protobufs.Enums.PermissionType>(),
+                                                                                                                      AllowAnonymous = t2.AllowAnonymous,
+                                                                                                                      Tag = t2.Tag,
+                                                                                                                      RouteValues =
+                                                                                                                      {
+                                                                                                                          t2.RouteValues.Select(t3 => new RegisterRouteRequest.Types.RouteValue
+                                                                                                                                                      {
+                                                                                                                                                          Key = t3.Key,
+                                                                                                                                                          Value = t3.Value
+                                                                                                                                                      })
+                                                                                                                      }
+                                                                                                                  })
+                                                                                               }
+                                                                                           })
+                                                                 }
+                                                             };
+
+                                               try
+                                               {
+                                                   client.RegisterRoute(request);
+                                               }
+                                               catch (Exception e)
+                                               {
+                                                   logger.LogError(e, "{E}", e);
+                                               }
+                                           });
     }
 
     private static PermissionType GetPermission(HttpMethodMetadata? meta)
