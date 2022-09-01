@@ -5,7 +5,7 @@
     <LangVersion>latest</LangVersion>
     <VersionMajor>1</VersionMajor>
     <VersionMinor>0</VersionMinor>
-    <VersionPatch>0</VersionPatch>
+    <VersionPatch>1</VersionPatch>
     <VersionPrefix>$(VersionMajor).$(VersionMinor).$(VersionPatch)</VersionPrefix>
     <VersionSuffix>$(VersionSuffix)</VersionSuffix>
     <FileVersion>$(VersionMajor).$([System.DateTime]::UtcNow.ToString(yy)).$([System.DateTime]::UtcNow.ToString(MMdd)).$([System.DateTime]::UtcNow.ToString(HHmm))</FileVersion>
@@ -34,6 +34,7 @@
 
   <ItemGroup>
     <PackageReference Include="Netcorext.Auth.Abstractions" Version="1.0.0-dev.*"/>
+    <PackageReference Include="Netcorext.Auth.Protobufs" Version="1.0.0-dev.*"/>
   </ItemGroup>
 
   <Target Name="IncludeProjectReferences" DependsOnTargets="ResolveReferences">
