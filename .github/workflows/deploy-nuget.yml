@@ -2,7 +2,10 @@ name: Build and Deploy to Nuget
 
 on:
   push:
-    branches: [ main, dev ]
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
 
 env:
   NUGET_API_URL: https://api.nuget.org/v3/index.json
