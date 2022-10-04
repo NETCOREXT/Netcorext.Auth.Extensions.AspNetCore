@@ -21,26 +21,26 @@
     <RepositoryUrl>https://github.com/NETCOREXT/Netcorext.Auth.Extensions.AspNetCore.git</RepositoryUrl>
     <Description />
   </PropertyGroup>
-  
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0"/>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0"/>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="5.0"/>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="5.0.*" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Grpc.AspNetCore" Version="2.44"/>
+    <PackageReference Include="Grpc.AspNetCore" Version="2.44.*" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Netcorext.Auth.Abstractions" Version="1.0.0-dev.*"/>
-    <PackageReference Include="Netcorext.Auth.Protobufs" Version="1.0.0-dev.*"/>
+    <PackageReference Include="Netcorext.Auth.Abstractions" Version="1.0.0-dev.*" />
+    <PackageReference Include="Netcorext.Auth.Protobufs" Version="1.0.0-dev.*" />
   </ItemGroup>
 
   <Target Name="IncludeProjectReferences" DependsOnTargets="ResolveReferences">
     <ItemGroup>
-      <IncludeBuildOutput/>
-      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"/>
+      <IncludeBuildOutput />
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
     </ItemGroup>
   </Target>
 
