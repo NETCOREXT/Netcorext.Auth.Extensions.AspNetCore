@@ -25,7 +25,7 @@ public static class ApplicationBuilderExtension
     public static IApplicationBuilder RegisterPermissionEndpoints(this IApplicationBuilder builder, Action<IServiceProvider, RegisterConfig>? configure, Action<IServiceProvider, RegisterConfig, IEnumerable<PermissionEndpoint>> register)
     {
         if (register == null) throw new ArgumentNullException(nameof(register));
-        
+
         var app = (WebApplication)builder;
 
         var config = new RegisterConfig();
@@ -144,7 +144,7 @@ public static class ApplicationBuilderExtension
                                                }
                                                catch (Exception e)
                                                {
-                                                   logger.LogError(e, "{E}", e);
+                                                   logger.LogError(e, "{Message}", e.Message);
                                                }
                                            });
     }
