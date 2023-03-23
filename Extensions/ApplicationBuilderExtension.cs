@@ -49,8 +49,6 @@ public static class ApplicationBuilderExtension
                                                                 .SelectMany(t => t.Endpoints)
                                                                 .Cast<RouteEndpoint>()
                                                                 .Where(t => t.Metadata.Count > 0
-
-                                                                            // && t.Metadata.GetMetadata<PermissionAttribute>() != null
                                                                          && t.Metadata.GetMetadata<HttpMethodMetadata>() != null
                                                                          && !string.IsNullOrWhiteSpace(t.RoutePattern.RawText))
                                                                 .Select(t =>
