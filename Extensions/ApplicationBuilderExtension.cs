@@ -69,7 +69,7 @@ public static class ApplicationBuilderExtension
                                                                                        BaseUrl = (grpcMethodMetadata == null ? config.HttpBaseUrl : config.Http2BaseUrl).TrimEnd(char.Parse("/")),
                                                                                        RelativePath = GetRelativePath(t, apiExplorerOptions?.Value)!,
                                                                                        Template = TrimSlash(t.RoutePattern.RawText)!,
-                                                                                       RouteValues = new Dictionary<string, string?>(t.RoutePattern.RequiredValues.Select(t2 => new KeyValuePair<string, string?>(t2.Key, t2.Value?.ToString()))),
+                                                                                       RouteValues = t.RoutePattern.RequiredValues.ToDictionary(t2 => t2.Key, t2 => t2.Value?.ToString() ?? string.Empty),
                                                                                        FunctionId = permissionAttr?.FunctionId ?? "OTHER",
                                                                                        NativePermission = (permissionAttr?.NativePermission ?? GetPermission(httpMethodAttr)) | GetPermission(controllerActionDescriptor) | GetPermission(grpcMethodMetadata),
                                                                                        AllowAnonymous = allowAnonymousAttr != null || permissionAttr == null,
