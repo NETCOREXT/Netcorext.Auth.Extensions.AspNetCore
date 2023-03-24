@@ -58,7 +58,16 @@ public static class ApplicationBuilderExtension
                                                                             var controllerActionDescriptor = t.Metadata.GetMetadata<ControllerActionDescriptor>();
                                                                             var grpcMethodMetadata = t.Metadata.GetMetadata<GrpcMethodMetadata>();
                                                                             var allowAnonymousAttr = t.Metadata.GetMetadata<AllowAnonymousAttribute>();
+                                                                            var nativePermission = PermissionType.None;
 
+                                                                            if (grpcMethodMetadata == null)
+                                                                                nativePermission |= GetPermission(httpMethodAttr) | GetPermission(controllerActionDescriptor);
+                                                                            else
+                                                                                nativePermission |= GetPermission(grpcMethodMetadata);
+
+                                                                            if (permissionAttr != null)
+                                                                                nativePermission = permissionAttr.NativePermission;
+                                                                            
                                                                             return new PermissionEndpoint
                                                                                    {
                                                                                        Group = string.IsNullOrWhiteSpace(config.RouteGroupName) ? Assembly.GetEntryAssembly()!.GetName().Name! : config.RouteGroupName,
@@ -69,7 +78,7 @@ public static class ApplicationBuilderExtension
                                                                                        Template = TrimSlash(t.RoutePattern.RawText)!,
                                                                                        RouteValues = t.RoutePattern.RequiredValues.ToDictionary(t2 => t2.Key, t2 => t2.Value?.ToString() ?? string.Empty),
                                                                                        FunctionId = permissionAttr?.FunctionId ?? "OTHER",
-                                                                                       NativePermission = (permissionAttr?.NativePermission ?? GetPermission(httpMethodAttr)) | GetPermission(controllerActionDescriptor) | GetPermission(grpcMethodMetadata),
+                                                                                       NativePermission = nativePermission,
                                                                                        AllowAnonymous = allowAnonymousAttr != null || permissionAttr == null,
                                                                                        Tag = permissionAttr?.Tag
                                                                                    };
