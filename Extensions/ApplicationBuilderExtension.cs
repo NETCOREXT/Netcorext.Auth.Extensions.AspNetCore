@@ -65,7 +65,7 @@ public static class ApplicationBuilderExtension
                                                                             else
                                                                                 nativePermission |= GetPermission(grpcMethodMetadata);
 
-                                                                            if (permissionAttr != null)
+                                                                            if (permissionAttr != null && permissionAttr.NativePermission != PermissionType.None)
                                                                                 nativePermission = permissionAttr.NativePermission;
                                                                             
                                                                             return new PermissionEndpoint
