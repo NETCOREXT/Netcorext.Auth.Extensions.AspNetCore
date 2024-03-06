@@ -46,7 +46,11 @@ public class JwtAuthenticationHeaderMiddleware
 
         if (client.Length != 2 || !long.TryParse(client[0], out var clientId)) return (false, null);
 
-        var claims = new List<Claim> { new(ClaimTypes.Name, client[0]) };
+        var claims = new List<Claim>
+                     {
+                         new(ClaimTypes.Name, client[0]),
+                         new(ClaimTypes.UserData, token)
+                     };
 
         var claimsIdentity = new ClaimsIdentity(claims.ToArray(), "AuthenticationTypes.Basic", ClaimTypes.Name, ClaimTypes.Role);
 
@@ -61,7 +65,10 @@ public class JwtAuthenticationHeaderMiddleware
 
         var jwt = jwtSecurityTokenHandler.ReadJwtToken(token);
 
-        var claims = new List<Claim>();
+        var claims = new List<Claim>
+                     {
+                         new(ClaimTypes.UserData, token)
+                     };
 
         foreach (var tokenClaim in jwt.Claims)
         {

@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Grpc.AspNetCore" Version="2.44.*" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.*" />
   </ItemGroup>
 
   <ItemGroup>
